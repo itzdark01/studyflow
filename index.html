@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>StudyFlow</title>
+    <!-- Importing the Inter font -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <div class="app-container">
+        <!-- Header -->
+        <header class="header">
+            <div>
+                <h1>StudyFlow</h1>
+                <p class="subtitle">Organize your studies, achieve your goals.</p>
+            </div>
+            <button id="open-modal-btn" class="btn-primary">+ Add Task</button>
+        </header>
+
+        <!-- Progress Bar -->
+        <section class="progress-section">
+            <div class="progress-text">
+                <span>Overall Progress</span>
+                <span id="progress-percentage">0%</span>
+            </div>
+            <div class="progress-bar-bg">
+                <div id="progress-bar-fill" class="progress-bar-fill"></div>
+            </div>
+        </section>
+
+        <!-- Task Columns -->
+        <main class="columns-container">
+            <!-- Pending Tasks -->
+            <section class="column">
+                <h2>Pending <span id="pending-count" class="task-count">0</span></h2>
+                <div id="pending-list" class="task-list">
+                    <!-- Task cards go here -->
+                    <p class="empty-state" id="pending-empty">No pending tasks. You're all caught up!</p>
+                </div>
+            </section>
+
+            <!-- Completed Tasks -->
+            <section class="column">
+                <h2>Completed <span id="completed-count" class="task-count">0</span></h2>
+                <div id="completed-list" class="task-list">
+                    <!-- Task cards go here -->
+                    <p class="empty-state" id="completed-empty">No completed tasks yet.</p>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Add Task Modal -->
+    <div id="task-modal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <h2>Add New Task</h2>
+            <form id="task-form">
+                <div class="input-group">
+                    <label for="task-title">Task Title</label>
+                    <input type="text" id="task-title" placeholder="e.g., Read Chapter 4" required maxlength="100">
+                </div>
+                
+                <div class="input-group">
+                    <label for="task-subject">Subject</label>
+                    <select id="task-subject" required>
+                        <option value="" disabled selected>Select a subject</option>
+                        <option value="Maths">Maths</option>
+                        <option value="Science">Science</option>
+                        <option value="English">English</option>
+                        <option value="History">History</option>
+                        <option value="Other">Other</option>
+                    </select>
+                </div>
+
+                <div class="input-group">
+                    <label for="task-deadline">Deadline</label>
+                    <input type="date" id="task-deadline" required>
+                </div>
+
+                <div class="modal-actions">
+                    <button type="button" id="cancel-btn" class="btn-secondary">Cancel</button>
+                    <button type="submit" class="btn-primary">Save Task</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
