@@ -26,11 +26,16 @@ const subjectColors = {
 
 // --- Functions ---
 
-// Load tasks from localStorage
+// Load tasks from localStorage (with safety try/catch)
 function loadTasks() {
-    const storedTasks = localStorage.getItem('studyflow_tasks');
-    if (storedTasks) {
-        tasks = JSON.parse(storedTasks);
+    try {
+        const storedTasks = localStorage.getItem('studyflow_tasks');
+        if (storedTasks) {
+            tasks = JSON.parse(storedTasks);
+        }
+    } catch (error) {
+        console.error("Failed to load tasks. Starting fresh.", error);
+        tasks = []; // Fallback if data is corrupted
     }
     renderTasks();
 }
@@ -44,12 +49,22 @@ function saveTasks() {
 function formatDate(dateString) {
     const options = { year: 'numeric', month: 'short', day: 'numeric' };
     const date = new Date(dateString);
-    // Add timezone offset to prevent date shifting
     date.setMinutes(date.getMinutes() + date.getTimezoneOffset());
     return date.toLocaleDateString('en-GB', options);
 }
 
-// Safely escape HTML to prevent XSS security issues
+// Check if a task is overdue
+function isOverdue(deadlineStr) {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); // Reset time to midnight for accurate comparison
+    
+    const deadline = new Date(deadlineStr);
+    deadline.setMinutes(deadline.getMinutes() + deadline.getTimezoneOffset()); // Fix timezone
+    
+    return deadline < today;
+}
+
+// Safely escape HTML
 function escapeHTML(str) {
     return str.replace(/[&<>'"]/g, 
         tag => ({
@@ -67,6 +82,10 @@ function createTaskCard(task) {
     const safeTitle = escapeHTML(task.title);
     const formattedDate = formatDate(task.deadline);
     const dotColor = subjectColors[task.subject] || subjectColors['Other'];
+    
+    // Check if it's overdue (only for pending tasks)
+    const overdue = !isCompleted && isOverdue(task.deadline);
+    const deadlineClass = overdue ? 'task-deadline overdue' : 'task-deadline';
 
     const card = document.createElement('div');
     card.className = `task-card ${isCompleted ? 'completed' : ''}`;
@@ -77,7 +96,7 @@ function createTaskCard(task) {
                 <span class="subject-dot" style="background-color: ${dotColor}" title="${task.subject}"></span>
                 <span class="task-title">${safeTitle}</span>
             </div>
-            <span class="task-deadline">${formattedDate}</span>
+            <span class="${deadlineClass}">${overdue ? '⚠️ ' : ''}${formattedDate}</span>
         </div>
         <div class="task-actions">
             <button class="action-btn complete" onclick="toggleTask('${task.id}')">
@@ -94,32 +113,34 @@ function createTaskCard(task) {
 
 // Render all tasks to the screen
 function renderTasks() {
-    // Clear current lists
     pendingList.innerHTML = '';
     completedList.innerHTML = '';
 
     let pendingTotal = 0;
     let completedTotal = 0;
 
-    // Separate tasks into pending and completed
-    tasks.forEach(task => {
-        const card = createTaskCard(task);
-        if (task.completed) {
-            completedList.appendChild(card);
-            completedTotal++;
-        } else {
-            pendingList.appendChild(card);
-            pendingTotal++;
-        }
+    // Separate and SORT tasks
+    const pendingTasks = tasks.filter(t => !t.completed);
+    const completedTasks = tasks.filter(t => t.completed);
+
+    // Sort pending tasks by deadline (closest date first)
+    pendingTasks.sort((a, b) => new Date(a.deadline) - new Date(b.deadline));
+
+    // Render pending
+    pendingTasks.forEach(task => {
+        pendingList.appendChild(createTaskCard(task));
+        pendingTotal++;
+    });
+
+    // Render completed
+    completedTasks.forEach(task => {
+        completedList.appendChild(createTaskCard(task));
+        completedTotal++;
     });
 
     // Handle empty states
-    if (pendingTotal === 0) {
-        pendingList.appendChild(pendingEmpty);
-    }
-    if (completedTotal === 0) {
-        completedList.appendChild(completedEmpty);
-    }
+    if (pendingTotal === 0) pendingList.appendChild(pendingEmpty);
+    if (completedTotal === 0) completedList.appendChild(completedEmpty);
 
     // Update counts
     pendingCount.textContent = pendingTotal;
@@ -144,7 +165,7 @@ taskForm.addEventListener('submit', (e) => {
     if (!title || !subject || !deadline) return;
 
     const newTask = {
-        id: Date.now().toString(), // Unique ID based on timestamp
+        id: Date.now().toString(),
         title: title,
         subject: subject,
         deadline: deadline,
@@ -155,7 +176,6 @@ taskForm.addEventListener('submit', (e) => {
     saveTasks();
     renderTasks();
 
-    // Reset and close modal
     taskForm.reset();
     modal.classList.add('hidden');
 });
@@ -170,17 +190,19 @@ window.toggleTask = function(id) {
     }
 };
 
-// Delete a task
+// Delete a task (WITH CONFIRMATION)
 window.deleteTask = function(id) {
-    tasks = tasks.filter(t => t.id !== id);
-    saveTasks();
-    renderTasks();
+    // Ask for confirmation before deleting
+    if (confirm("Are you sure you want to delete this task?")) {
+        tasks = tasks.filter(t => t.id !== id);
+        saveTasks();
+        renderTasks();
+    }
 };
 
 // --- Event Listeners for Modal ---
 openModalBtn.addEventListener('click', () => {
     modal.classList.remove('hidden');
-    // Set default date to today (optional UX improvement)
     document.getElementById('task-deadline').valueAsDate = new Date();
 });
 
@@ -192,6 +214,14 @@ cancelBtn.addEventListener('click', () => {
 // Close modal if clicking outside the white box
 modal.addEventListener('click', (e) => {
     if (e.target === modal) {
+        modal.classList.add('hidden');
+        taskForm.reset();
+    }
+});
+
+// Close modal with Escape key
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && !modal.classList.contains('hidden')) {
         modal.classList.add('hidden');
         taskForm.reset();
     }

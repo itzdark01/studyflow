@@ -340,3 +340,9 @@ button {
         flex-direction: column;
     }
 }
+/* --- Overdue Task Styling --- */
+.task-deadline.overdue {
+    background-color: #FEE2E2;
+    color: #DC2626;
+    font-weight: 600;
+}
