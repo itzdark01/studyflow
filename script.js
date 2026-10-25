@@ -1,5 +1,6 @@
 // --- State Management ---
 let tasks = [];
+let editingTaskId = null;
 
 // --- DOM Elements ---
 const modal = document.getElementById('task-modal');
@@ -12,8 +13,17 @@ const pendingEmpty = document.getElementById('pending-empty');
 const completedEmpty = document.getElementById('completed-empty');
 const pendingCount = document.getElementById('pending-count');
 const completedCount = document.getElementById('completed-count');
+const clearCompletedBtn = document.getElementById('clear-completed-btn');
 const progressBarFill = document.getElementById('progress-bar-fill');
 const progressPercentage = document.getElementById('progress-percentage');
+const modalTitle = document.getElementById('modal-title');
+const saveTaskBtn = document.getElementById('save-task-btn');
+const taskSearch = document.getElementById('task-search');
+const darkModeToggle = document.getElementById('dark-mode-toggle');
+const taskSubjectSelect = document.getElementById('task-subject');
+const customSubjectGroup = document.getElementById('custom-subject-group');
+const customSubjectInput = document.getElementById('custom-subject');
+const standardSubjects = ['Maths', 'Science', 'English', 'History', 'Other'];
 
 // --- Subject Colors Map ---
 const subjectColors = {
@@ -93,12 +103,15 @@ function createTaskCard(task) {
     card.innerHTML = `
         <div class="task-header">
             <div class="task-title-container">
-                <span class="subject-dot" style="background-color: ${dotColor}" title="${task.subject}"></span>
+                <span class="subject-dot" style="background-color: ${dotColor}" title="${escapeHTML(task.subject)}"></span>
                 <span class="task-title">${safeTitle}</span>
             </div>
             <span class="${deadlineClass}">${overdue ? '⚠️ ' : ''}${formattedDate}</span>
         </div>
         <div class="task-actions">
+            <button class="action-btn edit" onclick="editTask('${task.id}')">
+                Edit
+            </button>
             <button class="action-btn complete" onclick="toggleTask('${task.id}')">
                 ${isCompleted ? 'Undo' : 'Mark Complete'}
             </button>
@@ -116,12 +129,13 @@ function renderTasks() {
     pendingList.innerHTML = '';
     completedList.innerHTML = '';
 
-    let pendingTotal = 0;
-    let completedTotal = 0;
-
-    // Separate and SORT tasks
-    const pendingTasks = tasks.filter(t => !t.completed);
-    const completedTasks = tasks.filter(t => t.completed);
+    const searchTerm = taskSearch.value.trim().toLocaleLowerCase();
+    const matchingTasks = tasks.filter(task =>
+        task.title.toLocaleLowerCase().includes(searchTerm) ||
+        task.subject.toLocaleLowerCase().includes(searchTerm)
+    );
+    const pendingTasks = matchingTasks.filter(t => !t.completed);
+    const completedTasks = matchingTasks.filter(t => t.completed);
 
     // Sort pending tasks by deadline (closest date first)
     pendingTasks.sort((a, b) => new Date(a.deadline) - new Date(b.deadline));
@@ -129,22 +143,31 @@ function renderTasks() {
     // Render pending
     pendingTasks.forEach(task => {
         pendingList.appendChild(createTaskCard(task));
-        pendingTotal++;
     });
 
     // Render completed
     completedTasks.forEach(task => {
         completedList.appendChild(createTaskCard(task));
-        completedTotal++;
     });
 
     // Handle empty states
+    const pendingTotal = tasks.filter(task => !task.completed).length;
+    const completedTotal = tasks.filter(task => task.completed).length;
+    pendingEmpty.textContent = searchTerm
+        ? 'No matching pending tasks.'
+        : "No pending tasks. You're all caught up!";
+    completedEmpty.textContent = searchTerm
+        ? 'No matching completed tasks.'
+        : 'No completed tasks yet.';
     if (pendingTotal === 0) pendingList.appendChild(pendingEmpty);
+    else if (pendingTasks.length === 0) pendingList.appendChild(pendingEmpty);
     if (completedTotal === 0) completedList.appendChild(completedEmpty);
+    else if (completedTasks.length === 0) completedList.appendChild(completedEmpty);
 
     // Update counts
     pendingCount.textContent = pendingTotal;
     completedCount.textContent = completedTotal;
+    clearCompletedBtn.hidden = completedTotal === 0;
 
     // Update progress bar
     const totalTasks = pendingTotal + completedTotal;
@@ -159,25 +182,73 @@ taskForm.addEventListener('submit', (e) => {
     e.preventDefault();
     
     const title = document.getElementById('task-title').value.trim();
-    const subject = document.getElementById('task-subject').value;
+    const selectedSubject = taskSubjectSelect.value;
+    const subject = selectedSubject === 'Custom'
+        ? customSubjectInput.value.trim()
+        : selectedSubject;
     const deadline = document.getElementById('task-deadline').value;
 
     if (!title || !subject || !deadline) return;
 
-    const newTask = {
-        id: Date.now().toString(),
-        title: title,
-        subject: subject,
-        deadline: deadline,
-        completed: false
-    };
+    if (editingTaskId) {
+        const task = tasks.find(t => t.id === editingTaskId);
+        if (!task) {
+            editingTaskId = null;
+            return;
+        }
+        task.title = title;
+        task.subject = subject;
+        task.deadline = deadline;
+    } else {
+        tasks.push({
+            id: Date.now().toString(),
+            title: title,
+            subject: subject,
+            deadline: deadline,
+            completed: false
+        });
+    }
 
-    tasks.push(newTask);
     saveTasks();
     renderTasks();
 
     taskForm.reset();
+    setCustomSubjectVisibility(false);
     modal.classList.add('hidden');
+    editingTaskId = null;
+    modalTitle.textContent = 'Add New Task';
+    saveTaskBtn.textContent = 'Save Task';
+});
+
+// Open the task form with an existing task's details.
+window.editTask = function(id) {
+    const task = tasks.find(t => t.id === id);
+    if (!task) return;
+
+    editingTaskId = task.id;
+    document.getElementById('task-title').value = task.title;
+    if (standardSubjects.includes(task.subject)) {
+        taskSubjectSelect.value = task.subject;
+        setCustomSubjectVisibility(false);
+    } else {
+        taskSubjectSelect.value = 'Custom';
+        customSubjectInput.value = task.subject;
+        setCustomSubjectVisibility(true);
+    }
+    document.getElementById('task-deadline').value = task.deadline;
+    modalTitle.textContent = 'Edit Task';
+    saveTaskBtn.textContent = 'Save Changes';
+    modal.classList.remove('hidden');
+};
+
+// Remove all completed tasks.
+clearCompletedBtn.addEventListener('click', () => {
+    if (!tasks.some(task => task.completed)) return;
+    if (confirm('Are you sure you want to clear all completed tasks?')) {
+        tasks = tasks.filter(task => !task.completed);
+        saveTasks();
+        renderTasks();
+    }
 });
 
 // Toggle task completion status
@@ -202,28 +273,67 @@ window.deleteTask = function(id) {
 
 // --- Event Listeners for Modal ---
 openModalBtn.addEventListener('click', () => {
+    editingTaskId = null;
+    taskForm.reset();
+    setCustomSubjectVisibility(false);
+    modalTitle.textContent = 'Add New Task';
+    saveTaskBtn.textContent = 'Save Task';
     modal.classList.remove('hidden');
     document.getElementById('task-deadline').valueAsDate = new Date();
 });
 
-cancelBtn.addEventListener('click', () => {
+function closeModal() {
     modal.classList.add('hidden');
     taskForm.reset();
+    setCustomSubjectVisibility(false);
+    editingTaskId = null;
+    modalTitle.textContent = 'Add New Task';
+    saveTaskBtn.textContent = 'Save Task';
+}
+
+function setCustomSubjectVisibility(visible) {
+    customSubjectGroup.hidden = !visible;
+    customSubjectInput.required = visible;
+    if (!visible) customSubjectInput.value = '';
+}
+
+taskSubjectSelect.addEventListener('change', () => {
+    setCustomSubjectVisibility(taskSubjectSelect.value === 'Custom');
+});
+
+taskSearch.addEventListener('input', renderTasks);
+
+function setDarkMode(enabled) {
+    document.body.classList.toggle('dark-mode', enabled);
+    darkModeToggle.textContent = enabled ? '☀️ Light' : '🌙 Dark';
+    localStorage.setItem('studyflow_dark_mode', String(enabled));
+}
+
+darkModeToggle.addEventListener('click', () => {
+    setDarkMode(!document.body.classList.contains('dark-mode'));
+});
+
+try {
+    setDarkMode(localStorage.getItem('studyflow_dark_mode') === 'true');
+} catch (error) {
+    console.error('Failed to load dark mode preference.', error);
+}
+
+cancelBtn.addEventListener('click', () => {
+    closeModal();
 });
 
 // Close modal if clicking outside the white box
 modal.addEventListener('click', (e) => {
     if (e.target === modal) {
-        modal.classList.add('hidden');
-        taskForm.reset();
+        closeModal();
     }
 });
 
 // Close modal with Escape key
 document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape' && !modal.classList.contains('hidden')) {
-        modal.classList.add('hidden');
-        taskForm.reset();
+        closeModal();
     }
 });
 

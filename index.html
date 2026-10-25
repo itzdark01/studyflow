@@ -17,7 +17,10 @@
                 <h1>StudyFlow</h1>
                 <p class="subtitle">Organize your studies, achieve your goals.</p>
             </div>
-            <button id="open-modal-btn" class="btn-primary">+ Add Task</button>
+            <div class="header-actions">
+                <button type="button" id="dark-mode-toggle" class="btn-secondary">🌙 Dark</button>
+                <button id="open-modal-btn" class="btn-primary">+ Add Task</button>
+            </div>
         </header>
 
         <!-- Progress Bar -->
@@ -29,6 +32,10 @@
             <div class="progress-bar-bg">
                 <div id="progress-bar-fill" class="progress-bar-fill"></div>
             </div>
+        </section>
+
+        <section class="search-section">
+            <input type="search" id="task-search" placeholder="Search tasks by title or subject..." aria-label="Search tasks by title or subject">
         </section>
 
         <!-- Task Columns -->
@@ -44,10 +51,10 @@
 
             <!-- Completed Tasks -->
             <section class="column">
-               <div class="column-header">
-    <h2>Completed <span id="completed-count" class="task-count">0</span></h2>
-    <button id="clear-completed-btn" class="btn-text">Clear</button>
-</div>
+                <div class="column-heading">
+                    <h2>Completed <span id="completed-count" class="task-count">0</span></h2>
+                    <button type="button" id="clear-completed-btn" class="action-btn delete" hidden>Clear completed</button>
+                </div>
                 <div id="completed-list" class="task-list">
                     <!-- Task cards go here -->
                     <p class="empty-state" id="completed-empty">No completed tasks yet.</p>
@@ -59,7 +66,7 @@
     <!-- Add Task Modal -->
     <div id="task-modal" class="modal-overlay hidden">
         <div class="modal-content">
-            <h2>Add New Task</h2>
+            <h2 id="modal-title">Add New Task</h2>
             <form id="task-form">
                 <div class="input-group">
                     <label for="task-title">Task Title</label>
@@ -75,7 +82,13 @@
                         <option value="English">English</option>
                         <option value="History">History</option>
                         <option value="Other">Other</option>
+                        <option value="Custom">+ Add Custom Subject</option>
                     </select>
+                </div>
+
+                <div class="input-group" id="custom-subject-group" hidden>
+                    <label for="custom-subject">Custom Subject</label>
+                    <input type="text" id="custom-subject" placeholder="Enter a subject" maxlength="50">
                 </div>
 
                 <div class="input-group">
@@ -85,7 +98,7 @@
 
                 <div class="modal-actions">
                     <button type="button" id="cancel-btn" class="btn-secondary">Cancel</button>
-                    <button type="submit" class="btn-primary">Save Task</button>
+                    <button type="submit" id="save-task-btn" class="btn-primary">Save Task</button>
                 </div>
             </form>
         </div>

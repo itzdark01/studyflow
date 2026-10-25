@@ -43,6 +43,12 @@ body {
     margin-bottom: 2rem;
 }
 
+.header-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
 h1 {
     font-size: 1.8rem;
     font-weight: 700;
@@ -94,6 +100,25 @@ button {
     margin-bottom: 2rem;
 }
 
+.search-section {
+    margin: -1rem 0 2rem;
+}
+
+.search-section input {
+    width: 100%;
+    padding: 0.85rem 1rem;
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    background-color: var(--white);
+    color: var(--text-main);
+    font-size: 1rem;
+    outline: none;
+}
+
+.search-section input:focus {
+    border-color: var(--primary);
+}
+
 .progress-text {
     display: flex;
     justify-content: space-between;
@@ -134,6 +159,17 @@ button {
     display: flex;
     align-items: center;
     gap: 0.5rem;
+}
+
+.column-heading {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.column-heading h2 {
+    margin-bottom: 0;
 }
 
 .task-count {
@@ -233,6 +269,18 @@ button {
 
 .action-btn.delete:hover {
     background-color: #FEF2F2;
+}
+
+.action-btn.edit {
+    color: var(--primary);
+}
+
+.action-btn.edit:hover {
+    background-color: #EEF2FF;
+}
+
+[hidden] {
+    display: none !important;
 }
 
 /* Completed Task Styles */
@@ -346,36 +394,60 @@ button {
     color: #DC2626;
     font-weight: 600;
 }
-/* --- Column Header & Clear Button --- */
-.column-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 1rem;
+
+/* --- Dark Mode --- */
+body.dark-mode {
+    --bg-color: #111827;
+    --text-main: #F9FAFB;
+    --text-muted: #D1D5DB;
+    --border-color: #374151;
+    background-color: var(--bg-color);
 }
 
-.column-header h2 {
-    margin-bottom: 0;
+body.dark-mode .progress-section,
+body.dark-mode .task-card,
+body.dark-mode .empty-state,
+body.dark-mode .search-section input,
+body.dark-mode .modal-content {
+    background-color: #1F2937;
+    color: var(--text-main);
 }
 
-.btn-text {
-    background: none;
-    border: none;
-    color: #EF4444;
-    font-size: 0.85rem;
-    font-weight: 500;
-    cursor: pointer;
-    padding: 0;
+body.dark-mode .task-card.completed {
+    background-color: #1B2430;
 }
 
-.btn-text:hover {
-    text-decoration: underline;
+body.dark-mode .task-deadline,
+body.dark-mode .input-group input,
+body.dark-mode .input-group select {
+    background-color: #374151;
+    color: var(--text-main);
 }
 
-/* --- Edit Button Styling --- */
-.action-btn.edit {
-    color: #3B82F6;
+body.dark-mode .action-btn:hover,
+body.dark-mode .btn-secondary:hover {
+    background-color: #374151;
 }
-.action-btn.edit:hover {
-    background-color: #EFF6FF;
+
+body.dark-mode .action-btn.complete:hover,
+body.dark-mode .action-btn.edit:hover {
+    background-color: #312E81;
+}
+
+body.dark-mode .action-btn.delete:hover {
+    background-color: #7F1D1D;
+}
+
+body.dark-mode .task-deadline.overdue {
+    background-color: #7F1D1D;
+    color: #FECACA;
+}
+
+body.dark-mode .modal-overlay {
+    background-color: rgba(0, 0, 0, 0.75);
+}
+
+body.dark-mode .input-group input:focus,
+body.dark-mode .input-group select:focus {
+    background-color: #1F2937;
 }
